@@ -12,21 +12,30 @@ import torch
 import numpy as np
 import pyro
 import pyro.distributions as dist
+from pathlib import Path
 
-BASE_URL = "https://raw.githubusercontent.com/pyro-ppl/datasets/master/us_elections/"
+
+# Set global random seeds for reproducibility
+torch.manual_seed(10)
+np.random.seed(10)
+pyro.set_rng_seed(10)
 
 # ============================================================
-# LOAD DATA
+# LOAD LOCAL DATA
 # ============================================================
 
-electoral_college_votes = pd.read_pickle(BASE_URL + "electoral_college_votes.pickle")
-ec_votes_tensor = torch.tensor(electoral_college_votes.values,
-                               dtype=torch.float).squeeze()
+# Path to the local data directory: project_root/data/
+DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 
-frame = pd.read_pickle(BASE_URL + "us_presidential_election_data_historical.pickle")
+electoral_college_votes = pd.read_pickle(DATA_DIR / "electoral_college_votes.pickle")
+ec_votes_tensor = torch.tensor(
+    electoral_college_votes.values, dtype=torch.float
+).squeeze()
+
+frame = pd.read_pickle(DATA_DIR / "us_presidential_election_data_historical.pickle")
 
 # Historical swing states (2000–2020)
-swing_states = ['FL','PA','MI','WI','OH','NC','AZ','GA','NV']
+swing_states = ['FL', 'PA', 'MI', 'WI', 'OH', 'NC', 'AZ', 'GA', 'NV']
 swing_indices = [frame.index.get_loc(st) for st in swing_states]
 
 # ============================================================
@@ -86,14 +95,14 @@ alpha_prior_samples = prior_dist.sample((25000,))
 prior_wins = torch.stack([election_winner(a) for a in alpha_prior_samples])
 prior_prob = prior_wins.mean().item()
 
-print(f"\nPrior probability of DEMOCRATIC win (national): {prior_prob:.4f}")
+print(f"\nPrior probability of Democratic win (national): {prior_prob:.4f}")
 print("\n==============================================\n")
 
 # ============================================================
-# LOAD TRUE 2016 RESULTS
+# LOAD TRUE 2016 RESULTS (LOCAL)
 # ============================================================
 
-test_data = pd.read_pickle(BASE_URL + "us_presidential_election_data_test.pickle")
+test_data = pd.read_pickle(DATA_DIR / "us_presidential_election_data_test.pickle")
 results_2016 = torch.tensor(test_data.values, dtype=torch.float)
 true_alpha_2016 = torch.log(results_2016[..., 0] / results_2016[..., 1])
 
@@ -155,10 +164,10 @@ df_synth = pd.DataFrame({
     "Number polled": [allocation[frame.index.get_loc(s)].item() for s in swing_states],
     "Dem respondents": [y_synth[frame.index.get_loc(s)].item() for s in swing_states]
 })
-df_synth["Percent Dem"] = (df_synth["Dem respondents"] / df_synth["Number polled"]).round(3)
+df_synth["Percent Dem"] = (df_synth["Dem respondents"] /
+                           df_synth["Number polled"]).round(3)
 df_synth = df_synth.set_index("State")
 print(df_synth)
-
 
 print("\nPoll from ACTUAL 2016 percentages:")
 df_real = pd.DataFrame({
@@ -166,7 +175,8 @@ df_real = pd.DataFrame({
     "Number polled": [allocation[frame.index.get_loc(s)].item() for s in swing_states],
     "Dem respondents": [y_real[frame.index.get_loc(s)].item() for s in swing_states]
 })
-df_real["Percent Dem"] = (df_real["Dem respondents"] / df_real["Number polled"]).round(3)
+df_real["Percent Dem"] = (df_real["Dem respondents"] /
+                          df_real["Number polled"]).round(3)
 df_real = df_real.set_index("State")
 print(df_real)
 
@@ -180,6 +190,6 @@ posterior_real = posterior_win_prob_given_y(y_real, allocation)
 print("\n==============================================")
 print("FINAL POSTERIOR RESULTS (Swing States Only)")
 print("----------------------------------------------")
-print(f"Posterior (synthetic poll): {posterior_synth.item():.4f}")
-print(f"Posterior (using actual 2016 percentages): {posterior_real.item():.4f}")
+print(f"Posterior probability of a Democratic win (synthetic poll): {posterior_synth.item():.4f}")
+print(f"Posterior probability of a Democratic win (actual 2016 percentages): {posterior_real.item():.4f}")
 print("==============================================\n")

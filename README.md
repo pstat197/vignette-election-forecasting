@@ -20,11 +20,23 @@ The final outputs include the prior probability of achieving at least 270 Electo
 
 ## Repository Contents
 
-- **elections.py**  
+### **data/**
+- **data/electoral_college_votes.pickle**  
+  State-by-state Electoral College vote allocations.
+
+- **data/us_presidential_election_data_historical.pickle**  
+  Historical Democratic and Republican vote totals (1976–2012). Used to construct the multivariate normal prior over state partisanship in both scripts.
+
+- **data/us_presidential_election_data_test.pickle**  
+  2016 presidential election results used to produce “true” state-level preferences for posterior evaluation and synthetic polling.
+
+### **scripts/**
+- **scripts/elections.py**  
   Implements a simplified Bayesian election model using importance sampling. This script constructs a multivariate normal prior from historical state-level election results and updates it with synthetic or real poll data to estimate prior and posterior Democratic win probabilities. It represents a streamlined version of the original Pyro-based model and is the primary script explained in detail in the vignette.
 
-- **elections_pyro_original.py**  
-  Contains the original Pyro-based version of the election forecasting model. This script uses Pyro's probabilistic programming tools, including model and guide structures and expected information gain utilities. It served as a foundation for development of the simplified approach presented in `elections.py`.
+- **scripts/elections_pyro_original.py**  
+  Contains the original Pyro-based version of the election forecasting model. This script uses Pyro's probabilistic programming tools, including model and guide structures and expected information gain utilities. It served as a foundation for the development of the simplified approach presented in `elections.py`.
+
 
 ## References
 
